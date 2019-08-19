@@ -1,44 +1,27 @@
 import sys
 import spotipy
 import spotipy.util as util
-import csv
+import argparse
+from spotipy_helpers import *
 
-username = sys.argv[1]
-playlist_name = sys.argv[2]
-csv_file_name = sys.argv[3]
+parser = argparse.ArgumentParser(description='Import songs to Spotify from Textfile')
+parser.add_argument('username', type=str, help='Spotify Username')
+parser.add_argument('filename', type=str, help='Name of Textfile for import')
+parser.add_argument('-p', '--playlist', type=str, help='Name of playlist to import songs into')
+parser.add_argument('-g', '--genre', type=str, help='Include yaml file categorizing subgenres into playlists')
+parser.add_argument('-b', '--batch-size', type=int, help='Number of songs per Spotify API Request')
+args = parser.parse_args()
 
-scope = 'playlist-modify-public'
-token = util.prompt_for_user_token(username, scope)
+sp = authenticate_spotipy(args.username)
+user_playlists = sp.user_playlists(args.username)['items']
 
-if token:
-  sp = spotipy.Spotify(auth=token)
-  user_playlists = sp.user_playlists(username)['items']
-
-  if user_playlists:
-    playlist_id = find_or_create_playlist(sp, playlist_name, user_playlists)
-    
-    songs_not_found = open("songs_not_found.txt","w+")
-    with open(csv_file_name, newline='') as csv_file:
-      song_reader = csv.reader(csv_file)
-      for row in song_reader:
-        response = find_song(sp, row[0], row[1])
-        if response:
-          print(response[0]['id'])
-          sp.user_playlist_add_tracks(username, playlist_id, [response[0]['id']])
-        else:
-           songs_not_found.write("Couldn't find song %s by %s\r\n" % row[0], row[1])
-
+timestamp = datetime.datetime.now().strftime("%m_%d_%Y_%X")
+songs_not_found = open(f'songs_not_found_{timestamp}.csv',"w")
+if args.genre:
+  print('Not yet implemented')
+  exit
 else:
-  print('Authentication to Spotify Failed')
+  playlist_id = find_or_create_playlist(sp, args.username, user_playlists, args.playlist)
+  add_songs_from_csv(sp, args.filename, args.username, playlist_id, songs_not_found, args.batch_size)
 
-def find_song(sp, songname, artist):
-  query = f'artist:%{artist} track:%{songname}'
-  print(f'Query = {query}')
-  return sp.search(q=query, type='track')['tracks']['items']
-
-def find_or_create_playlist(sp, playlist_name, user_playlists):
-  playlistfound = list(filter(lambda d: d['name'] in [f'{playlist_name}'], user_playlists))
-  if not playlistfound:
-    return sp.user_playlist_create(username, playlist_name)['id']
-  else:
-    return playlistfound[0]['id']
+songs_not_found.close()

@@ -21,8 +21,7 @@ def find_or_create_playlist(sp, username, user_playlists, playlist_name):
   else:
     return playlistfound[0]['id']
 
-def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found, batch_size):
-  batch_size = batch_size or 100
+def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found):
   with open(csv_file, newline='') as csv_file:
     song_reader = csv.reader(csv_file)
     counter = 0
@@ -34,7 +33,7 @@ def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found, bat
         first_song = response[0]
         song_ids.append(first_song['id'])
         print("Found {0} by {1}".format(first_song['name'], first_song['album']['artists'][0]['name']))
-        if counter % batch_size == 0:
+        if counter % 100 == 0:
           sp.user_playlist_add_tracks(username, playlist_id, song_ids)
           song_ids = []
           counter = 0
@@ -42,6 +41,32 @@ def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found, bat
         songs_not_found.write(f"{row[0]},{row[1]}\r\n")
     sp.user_playlist_add_tracks(username, playlist_id, song_ids)
 
+def add_songs_from_csv_genre(sp, csv_file, username, playlists_by_genre, playlist_hash, songs_not_found):
+  with open(csv_file, newline='') as csv_file:
+    song_reader = csv.reader(csv_file)
+    for row in song_reader:
+      response = find_song(sp, row[0], row[1])  
+      if response:
+        playlist_key = playlists_by_genre[row[2]] if row[2] in playlists_by_genre else 'OG Misc'
+        first_song = response[0]
+        playlist_hash[playlist_key]['song_ids'].append(first_song['id'])
+        print("Found {0} by {1} for playlist {2}".format(first_song['name'], first_song['album']['artists'][0]['name'], playlist_key))
+        if len(playlist_hash[playlist_key]['song_ids']) % 100 == 0:
+          sp.user_playlist_add_tracks(username, playlist_hash[playlist_key]['playlist_id'], playlist_hash[playlist_key]['song_ids'])
+          playlist_hash[playlist_key]['song_ids'] = []
+      else:
+        songs_not_found.write(f"{row[0]},{row[1]}\r\n")
+    for playlist in playlist_hash:
+      sp.user_playlist_add_tracks(username, playlist_hash[playlist]['playlist_id'], playlist_hash[playlist]['song_ids'])
+
+
 def find_song(sp, songname, artist):
   query = f'artist:%{artist} track:%{songname}'
   return sp.search(q=query, type='track')['tracks']['items']
+
+def parse_playlists_from_genre(sp, username, user_playlists, playlists_by_genre):
+    playlists = set(val for val in playlists_by_genre.values())
+    playlist_hash = { playlist: { "playlist_id": None, "song_ids": [] } for playlist in playlists }
+    for playlist in playlist_hash.keys():
+      playlist_hash[playlist]['playlist_id'] = find_or_create_playlist(sp, username, user_playlists, playlist)
+    return playlist_hash

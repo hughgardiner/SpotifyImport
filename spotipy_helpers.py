@@ -4,9 +4,13 @@ import spotipy
 import spotipy.util as util
 import json
 
+SPOTIPY_CLIENT_ID='4b8925015d0b47d9b9bf719ebe5cf882'
+SPOTIPY_CLIENT_SECRET='833d5ca3bdab45a0b7713c13aa1733ee'
+SPOTIPY_REDIRECT_URI='http://localhost/'
+
 def authenticate_spotipy(username):
   scope = 'playlist-modify-public'
-  token = util.prompt_for_user_token(username, scope)
+  token = util.prompt_for_user_token(username, scope,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri=SPOTIPY_REDIRECT_URI)
   if token:
     return spotipy.Spotify(auth=token)
   else:
@@ -57,7 +61,8 @@ def add_songs_from_csv_genre(sp, csv_file, username, playlists_by_genre, playlis
       else:
         songs_not_found.write(f"{row[0]},{row[1]}\r\n")
     for playlist in playlist_hash:
-      sp.user_playlist_add_tracks(username, playlist_hash[playlist]['playlist_id'], playlist_hash[playlist]['song_ids'])
+      if len(playlist_hash[playlist]['song_ids']) > 0:
+        sp.user_playlist_add_tracks(username, playlist_hash[playlist]['playlist_id'], playlist_hash[playlist]['song_ids'])
 
 
 def find_song(sp, songname, artist):

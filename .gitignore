@@ -5,4 +5,5 @@ test_output.json
 test_set.csv
 pivoted_genre_organization.yml
 __pycache__
-songs_not_found*
+output/
+input/

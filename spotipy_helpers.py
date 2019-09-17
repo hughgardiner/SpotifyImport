@@ -42,7 +42,7 @@ def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found):
           song_ids = []
           counter = 0
       else:
-        songs_not_found.write(f"{row[0]},{row[1]}\r\n")
+        songs_not_found.write(f"{row[0]},{row[1]},{row[2]}\r\n")
     sp.user_playlist_add_tracks(username, playlist_id, song_ids)
 
 def add_songs_from_csv_genre(sp, csv_file, username, playlists_by_genre, playlist_hash, songs_not_found):
@@ -72,10 +72,33 @@ def add_songs_from_csv_genre(sp, csv_file, username, playlists_by_genre, playlis
 def find_song(sp, songname, artist):
   try:
     query = f'artist:%{artist} track:%{songname}'
-    return sp.search(q=query, type='track')['tracks']['items']
+    songs = sp.search(q=query, type='track')['tracks']['items'] 
+    if songs:
+      return songs
+    else:
+      query = f'artist:%{simply_search_query(artist)} track:%{simply_search_query(songname)}'
+      return sp.search(q=query, type='track')['tracks']['items']
   except spotipy.client.SpotifyException as err: 
     print(f'Spotipy Exception occurred on track{songname} - {artist}')
     return None
+
+def simply_search_query(text):
+  plain_text = text.lower().strip()
+  if '(' in plain_text:
+    plain_text = plain_text.split('(')[0]
+  if 'feat' in plain_text:
+    plain_text = plain_text.split('feat')[0]
+  if 'ft' in plain_text:
+    plain_text = plain_text.split('ft')[0]
+  if 'vs' in plain_text:
+    plain_text = plain_text.split('vs')[0]
+  if 'and' in plain_text:
+    plain_text = plain_text.split('and')[0]
+  if '&' in plain_text:
+    plain_text = plain_text.split('&')[0]
+  if ' x ' in plain_text:
+    plain_text = plain_text.split(' x ')[0]
+  return plain_text
 
 def parse_playlists_from_genre(sp, username, user_playlists, playlists_by_genre):
     playlists = set(val for val in playlists_by_genre.values())

@@ -3,6 +3,7 @@ import csv
 import spotipy
 import spotipy.util as util
 import json
+import os
 
 SPOTIPY_CLIENT_ID = '4b8925015d0b47d9b9bf719ebe5cf882'
 SPOTIPY_CLIENT_SECRET = '833d5ca3bdab45a0b7713c13aa1733ee'
@@ -32,7 +33,7 @@ def find_or_create_playlist(sp, username, user_playlists, playlist_name):
 
 def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found):
     with open(csv_file, newline='') as csv_file:
-        song_reader = csv.reader(csv_file)
+        song_reader = csv.reader(csv_file, delimiter="\t")
         counter = 0
         song_ids = []
         for row in song_reader:
@@ -51,6 +52,13 @@ def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found):
             else:
                 songs_not_found.write(f"{row[0]},{row[1]},{row[2]}\r\n")
         sp.user_playlist_add_tracks(username, playlist_id, song_ids)
+
+def add_songs_from_directory(sp, directory, username, songs_not_found, user_playlists):
+    for filename in os.listdir(directory):
+        playlist_name = filename.split('.')[0].replace('_', ' ')
+        playlist_id = find_or_create_playlist(
+            sp, username, user_playlists, playlist_name)
+        add_songs_from_csv(sp, f'{directory}/{filename}', username, playlist_id, songs_not_found)
 
 
 def add_songs_from_csv_genre(sp, csv_file, username, playlists_by_genre, playlist_hash, songs_not_found):
@@ -113,6 +121,8 @@ def simply_search_query(text):
         plain_text = plain_text.split('&')[0]
     if ' x ' in plain_text:
         plain_text = plain_text.split(' x ')[0]
+    if ',' in plain_text:
+        plain_text = plain_text.split(',')[0]
     return plain_text
 
 

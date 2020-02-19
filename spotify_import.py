@@ -8,7 +8,9 @@ from spotipy_helpers import *
 parser = argparse.ArgumentParser(
     description='Import songs to Spotify from Textfile')
 parser.add_argument('username', type=str, help='Spotify Username')
-parser.add_argument('filename', type=str, help='Name of Textfile for import')
+parser.add_argument('-f', '--filename', type=str, help='Name of Textfile for import')
+parser.add_argument('-d', '--directory', type=str, 
+                    help='Name of Directory with files for import. Infers playlists from file names')
 parser.add_argument('-p', '--playlist', type=str,
                     help='Name of playlist to import songs into')
 parser.add_argument('-g', '--genre', type=str,
@@ -41,7 +43,10 @@ def create_genre_playlist_dict(genre_file):
 validate_inputs(args)
 
 sp = authenticate_spotipy(args.username)
-user_playlists = sp.user_playlists(args.username)['items']
+try:
+    user_playlists = sp.user_playlists(args.username)['items']
+except:
+    user_playlists = []
 
 timestamp = datetime.datetime.now().strftime("%m_%d_%Y_%X")
 songs_not_found = open(f'output/songs_not_found_{timestamp}.csv', "w")
@@ -59,9 +64,12 @@ if args.genre is not None:
                                  playlists_by_genre, playlist_hash, songs_not_found)
 
 else:
-    playlist_id = find_or_create_playlist(
-        sp, args.username, user_playlists, args.playlist)
-    add_songs_from_csv(sp, args.filename, args.username,
-                       playlist_id, songs_not_found)
+    if args.directory:
+        add_songs_from_directory(sp, args.directory, args.username, songs_not_found, user_playlists)
+    else:
+        playlist_id = find_or_create_playlist(
+            sp, args.username, user_playlists, args.playlist)
+        add_songs_from_csv(sp, args.filename, args.username,
+                        playlist_id, songs_not_found)
 
 songs_not_found.close()

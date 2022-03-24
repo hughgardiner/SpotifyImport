@@ -1,5 +1,7 @@
 .cache-*
 genre_organization.yml
+*.csv
+settings.json
 song_artist_genre.csv
 test_output.json
 test_set.csv

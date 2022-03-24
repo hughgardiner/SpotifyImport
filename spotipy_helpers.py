@@ -49,7 +49,7 @@ def add_songs_from_csv(sp, csv_file, username, playlist_id, songs_not_found):
                     song_ids = []
                     counter = 0
             else:
-                songs_not_found.write(f"{row[0]},{row[1]},{row[2]}\r\n")
+                songs_not_found.write(f"{row[0]},{row[1]}\r\n")
         sp.user_playlist_add_tracks(username, playlist_id, song_ids)
 
 
@@ -74,9 +74,9 @@ def add_songs_from_csv_genre(sp, csv_file, username, playlists_by_genre, playlis
                 else:
                     print(
                         f'Could not associate playlist for genre {row[2]}. Song {row[0]} - {row[1]} not added to a playlist')
-                    songs_not_found.write(f"{row[0]},{row[1]},{row[2]}\r\n")
+                    songs_not_found.write(f"{row[0]},{row[1]}\r\n")
             else:
-                songs_not_found.write(f"{row[0]},{row[1]},{row[2]}\r\n")
+                songs_not_found.write(f"{row[0]},{row[1]}\r\n")
         for playlist in playlist_hash:
             if len(playlist_hash[playlist]['song_ids']) > 0:
                 sp.user_playlist_add_tracks(

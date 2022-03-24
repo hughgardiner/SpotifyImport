@@ -7,9 +7,10 @@ Command line utility to convert your Music Collections into Spotify Playlists.
 ```bash
 git clone git@github.com:hughgardiner/SpotifyImport.git && cd SpotifyImport
 ```
-- Install [Spotipy](https://spotipy.readthedocs.io/en/latest/)
+- Install [Spotipy](https://spotipy.readthedocs.io/en/latest/) and `pyyaml`
 ```bash
 pip install spotipy
+pip install pyyaml
 ```
 - Convert your Music Libary into a CSV with columns `Song Name`, `Artist`, and `Genre` (optional unless utilizing [Import by Genre into Playlists](#import-by-genre-into-playlists))
 ```csv
